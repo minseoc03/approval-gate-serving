@@ -1,0 +1,7 @@
+# LMCache config for the NVMe tier (serve_vllm.slurm TIER=nvme).
+# /tmp sits on the node-local 894 GB Micron 7450 NVMe (verified 2026-08-05).
+chunk_size: 256
+local_cpu: false
+max_local_cpu_size: 5
+local_disk: "file:///tmp/lmcache_nvme/"
+max_local_disk_size: 200

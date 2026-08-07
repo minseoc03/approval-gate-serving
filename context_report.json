@@ -1,0 +1,237 @@
+[
+  {
+    "domain": "retail",
+    "policy_tokens": 1402,
+    "schema_tokens": 3187,
+    "schema_source": "registry",
+    "n_tools": 16,
+    "shared_prefix_tokens": 4589,
+    "n_tasks": 114,
+    "instruction_tokens_median": 103,
+    "actions_per_task_median": 5.0,
+    "actions_per_task_max": 13,
+    "distinct_actions": 15,
+    "action_kind_types": {
+      "read": 6,
+      "write": 8,
+      "unknown": 1
+    },
+    "action_kind_calls": {
+      "read": 357,
+      "write": 180,
+      "unknown": 13
+    },
+    "top_actions": [
+      [
+        "get_order_details",
+        168
+      ],
+      [
+        "find_user_id_by_name_zip",
+        61
+      ],
+      [
+        "get_user_details",
+        57
+      ],
+      [
+        "get_product_details",
+        54
+      ],
+      [
+        "return_delivered_order_items",
+        41
+      ],
+      [
+        "modify_pending_order_items",
+        39
+      ],
+      [
+        "exchange_delivered_order_items",
+        35
+      ],
+      [
+        "cancel_pending_order",
+        25
+      ],
+      [
+        "modify_pending_order_address",
+        24
+      ],
+      [
+        "find_user_id_by_email",
+        14
+      ]
+    ],
+    "kv_projection": {
+      "llama-3.1-8b": {
+        "bytes_per_token": 131072,
+        "shared_gb": 0.601489408,
+        "suffix_gb": 0.524288,
+        "total_gb": 1.125777408
+      },
+      "llama-3.1-70b": {
+        "bytes_per_token": 327680,
+        "shared_gb": 1.50372352,
+        "suffix_gb": 1.31072,
+        "total_gb": 2.81444352
+      }
+    }
+  },
+  {
+    "domain": "airline",
+    "policy_tokens": 1623,
+    "schema_tokens": 2979,
+    "schema_source": "registry",
+    "n_tools": 14,
+    "shared_prefix_tokens": 4602,
+    "n_tasks": 50,
+    "instruction_tokens_median": 123,
+    "actions_per_task_median": 1.5,
+    "actions_per_task_max": 19,
+    "distinct_actions": 10,
+    "action_kind_types": {
+      "read": 3,
+      "write": 6,
+      "unknown": 1
+    },
+    "action_kind_calls": {
+      "read": 91,
+      "write": 50,
+      "unknown": 1
+    },
+    "top_actions": [
+      [
+        "get_reservation_details",
+        57
+      ],
+      [
+        "update_reservation_flights",
+        20
+      ],
+      [
+        "search_direct_flight",
+        20
+      ],
+      [
+        "get_user_details",
+        14
+      ],
+      [
+        "cancel_reservation",
+        11
+      ],
+      [
+        "book_reservation",
+        10
+      ],
+      [
+        "update_reservation_baggages",
+        5
+      ],
+      [
+        "update_reservation_passengers",
+        3
+      ],
+      [
+        "calculate",
+        1
+      ],
+      [
+        "transfer_to_human_agents",
+        1
+      ]
+    ],
+    "kv_projection": {
+      "llama-3.1-8b": {
+        "bytes_per_token": 131072,
+        "shared_gb": 0.603193344,
+        "suffix_gb": 0.524288,
+        "total_gb": 1.127481344
+      },
+      "llama-3.1-70b": {
+        "bytes_per_token": 327680,
+        "shared_gb": 1.50798336,
+        "suffix_gb": 1.31072,
+        "total_gb": 2.81870336
+      }
+    }
+  },
+  {
+    "domain": "telecom",
+    "policy_tokens": 1311,
+    "schema_tokens": 1769,
+    "schema_source": "registry",
+    "n_tools": 13,
+    "shared_prefix_tokens": 3080,
+    "n_tasks": 2285,
+    "instruction_tokens_median": 258,
+    "actions_per_task_median": 6,
+    "actions_per_task_max": 12,
+    "distinct_actions": 17,
+    "action_kind_types": {
+      "unknown": 14,
+      "write": 3
+    },
+    "action_kind_calls": {
+      "unknown": 12023,
+      "write": 1192
+    },
+    "top_actions": [
+      [
+        "grant_app_permission",
+        2048
+      ],
+      [
+        "set_network_mode_preference",
+        1152
+      ],
+      [
+        "toggle_airplane_mode",
+        1127
+      ],
+      [
+        "toggle_roaming",
+        1120
+      ],
+      [
+        "enable_roaming",
+        1120
+      ],
+      [
+        "toggle_data",
+        1120
+      ],
+      [
+        "refuel_data",
+        1120
+      ],
+      [
+        "reboot_device",
+        1040
+      ],
+      [
+        "reset_apn_settings",
+        1032
+      ],
+      [
+        "toggle_wifi_calling",
+        1024
+      ]
+    ],
+    "kv_projection": {
+      "llama-3.1-8b": {
+        "bytes_per_token": 131072,
+        "shared_gb": 0.40370176,
+        "suffix_gb": 0.524288,
+        "total_gb": 0.92798976
+      },
+      "llama-3.1-70b": {
+        "bytes_per_token": 327680,
+        "shared_gb": 1.0092544,
+        "suffix_gb": 1.31072,
+        "total_gb": 2.3199744
+      }
+    }
+  }
+]

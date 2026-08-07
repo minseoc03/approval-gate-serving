@@ -1,0 +1,36 @@
+{
+  "retail": {
+    "n_gate_prompts": 309,
+    "n_tasks_covered": 110,
+    "prompt_tokens": {
+      "min": 6085,
+      "p25": 7555,
+      "median": 8422,
+      "p75": 9385,
+      "p95": 11189,
+      "max": 42960,
+      "mean": 8691
+    },
+    "conversation_tokens": {
+      "median": 3023,
+      "max": 37561
+    }
+  },
+  "airline": {
+    "n_gate_prompts": 140,
+    "n_tasks_covered": 47,
+    "prompt_tokens": {
+      "min": 6203,
+      "p25": 7578,
+      "median": 8344,
+      "p75": 9565,
+      "p95": 12051,
+      "max": 13324,
+      "mean": 8724
+    },
+    "conversation_tokens": {
+      "median": 2749,
+      "max": 7729
+    }
+  }
+}

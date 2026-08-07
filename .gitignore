@@ -1,0 +1,24 @@
+# virtualenvs
+.venv/
+.venv-vllm/
+
+# third-party clone (not ours to commit)
+tau2-bench/
+
+# logs & runtime state
+logs/
+harness/logs/
+harness/server_info*.txt
+err.log
+harness/err.log
+nohup.out
+
+# large derived data (regenerable via harness/build_gate_prompts.py)
+harness/results/gate_prompts.jsonl
+
+# python
+__pycache__/
+*.pyc
+
+# private project notes
+CLAUDE.md
