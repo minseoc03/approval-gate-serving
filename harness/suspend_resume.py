@@ -36,6 +36,24 @@ APPROVAL_TURN = {"role": "user",
                  "content": "Approved — please proceed with the action now."}
 
 
+def to_wire(messages):
+    """OpenAI wire format: tool_call function.arguments must be a JSON string.
+
+    gate_prompts.jsonl stores arguments as dicts (HF chat-template convention
+    for offline tokenization); convert on the way out.
+    """
+    out = []
+    for m in messages:
+        if m.get("tool_calls"):
+            m = json.loads(json.dumps(m))
+            for tc in m["tool_calls"]:
+                fn = tc.get("function", {})
+                if isinstance(fn.get("arguments"), (dict, list)):
+                    fn["arguments"] = json.dumps(fn["arguments"])
+        out.append(m)
+    return out
+
+
 def stream_ttft(client, base, model, messages, max_tokens):
     """Send one streaming request; return (ttft_s, e2e_s, usage)."""
     body = dict(model=model, messages=messages, max_tokens=max_tokens,
@@ -45,7 +63,9 @@ def stream_ttft(client, base, model, messages, max_tokens):
     ttft, usage = None, None
     with client.stream("POST", f"{base}/v1/chat/completions", json=body,
                        timeout=600) as r:
-        r.raise_for_status()
+        if r.status_code != 200:
+            detail = r.read().decode(errors="replace")[:400]
+            raise RuntimeError(f"HTTP {r.status_code}: {detail}")
         for line in r.iter_lines():
             if not line.startswith("data:"):
                 continue
@@ -70,7 +90,8 @@ def reset_prefix_cache(client, base):
 def run_tier(client, base, model, tier, prompts, wait_s, max_tokens, repeats):
     rows = []
     for p in prompts:
-        resume_msgs = p["messages"] + [APPROVAL_TURN]
+        warm_msgs = to_wire(p["messages"])
+        resume_msgs = warm_msgs + [APPROVAL_TURN]
         for rep in range(repeats):
             # make sure this prompt's KV is not already resident from the
             # previous repeat: full reset before every trial
@@ -78,7 +99,7 @@ def run_tier(client, base, model, tier, prompts, wait_s, max_tokens, repeats):
             time.sleep(0.5)
 
             # 1. warm
-            stream_ttft(client, base, model, p["messages"], 1)
+            stream_ttft(client, base, model, warm_msgs, 1)
             # 2. suspend
             time.sleep(wait_s)
             # 3. intervene

@@ -28,6 +28,20 @@ from pathlib import Path
 import httpx
 
 
+
+def to_wire(messages):
+    """OpenAI wire format: tool_call function.arguments must be a JSON string."""
+    out = []
+    for m in messages:
+        if m.get("tool_calls"):
+            m = json.loads(json.dumps(m))
+            for tc in m["tool_calls"]:
+                fn = tc.get("function", {})
+                if isinstance(fn.get("arguments"), (dict, list)):
+                    fn["arguments"] = json.dumps(fn["arguments"])
+        out.append(m)
+    return out
+
 def stream_ttft(client, base, model, messages, max_tokens=1):
     body = dict(model=model, messages=messages, max_tokens=max_tokens,
                 temperature=0.0, stream=True,
@@ -36,7 +50,9 @@ def stream_ttft(client, base, model, messages, max_tokens=1):
     ttft, usage = None, None
     with client.stream("POST", f"{base}/v1/chat/completions", json=body,
                        timeout=600) as r:
-        r.raise_for_status()
+        if r.status_code != 200:
+            detail = r.read().decode(errors="replace")[:400]
+            raise RuntimeError(f"HTTP {r.status_code}: {detail}")
         for line in r.iter_lines():
             if not line.startswith("data:"):
                 continue
@@ -83,14 +99,15 @@ def main():
     rows = []
     with httpx.Client() as client:
         for p in sample:
-            system_only = [p["messages"][0]]
+            wire_msgs = to_wire(p["messages"])
+            system_only = [wire_msgs[0]]
             for rep in range(args.reps):
                 reset(client, base)
                 stream_ttft(client, base, args.model, system_only)   # warm prefix
                 t_suffix, usage = stream_ttft(client, base, args.model,
-                                              p["messages"])
+                                              wire_msgs)
                 reset(client, base)
-                t_full, _ = stream_ttft(client, base, args.model, p["messages"])
+                t_full, _ = stream_ttft(client, base, args.model, wire_msgs)
                 rows.append(dict(
                     task_id=p["task_id"], domain=p["domain"], rep=rep,
                     n_tokens=p["n_tokens"], prefix_tokens=p["prefix_tokens"],

@@ -46,7 +46,7 @@ start_server () {  # $1 = tier
   echo "=== [$(date -Is)] starting server tier=$tier"
   "$VENV/bin/vllm" serve "$MODEL" --served-model-name $NAME \
       --tensor-parallel-size 1 --max-model-len 32768 \
-      --gpu-memory-utilization 0.92 --port $PORT "${EXTRA[@]}" \
+      --gpu-memory-utilization ${GPU_UTIL:-0.92} --port $PORT "${EXTRA[@]}" \
       > logs/server_${tier}_$SLURM_JOB_ID.log 2>&1 &
   SERVER_PID=$!
   for i in $(seq 1 60); do

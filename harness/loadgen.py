@@ -30,6 +30,12 @@ def load_prompts(path, domains=None):
             d = json.loads(line)
             if domains and d["domain"] not in domains:
                 continue
+            for m in d["messages"]:
+                if m.get("tool_calls"):
+                    for tc in m["tool_calls"]:
+                        fn = tc.get("function", {})
+                        if isinstance(fn.get("arguments"), (dict, list)):
+                            fn["arguments"] = json.dumps(fn["arguments"])
             prompts.append(d)
     return prompts
 
