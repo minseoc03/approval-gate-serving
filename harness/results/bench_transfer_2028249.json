@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "host": "h05",
+    "size_gb": 2.75,
+    "reps": 10,
+    "timestamp": "2026-08-07T09:25:47"
+  },
+  "results": [
+    {
+      "op": "m1_hbm_to_cpu_pinned",
+      "size_gb": 2.75,
+      "reps": 10,
+      "median_s": 0.053953681606799364,
+      "iqr_s": [
+        0.05394807062111795,
+        0.0540211726911366
+      ],
+      "gbps_median": 50.96964526390312,
+      "gbps_iqr": [
+        50.905966364762016,
+        50.97494624624284
+      ]
+    },
+    {
+      "op": "m1_cpu_to_hbm_pinned",
+      "size_gb": 2.75,
+      "reps": 10,
+      "median_s": 0.0527245313860476,
+      "iqr_s": [
+        0.05269862455315888,
+        0.052750145783647895
+      ],
+      "gbps_median": 52.15788689571737,
+      "gbps_iqr": [
+        52.13255734456145,
+        52.183525154930415
+      ]
+    },
+    {
+      "op": "m2_cpu_to_nvme_write",
+      "size_gb": 2.75,
+      "reps": 10,
+      "median_s": 3.9331216579303145,
+      "iqr_s": [
+        3.5232667445670813,
+        4.239798682741821
+      ],
+      "gbps_median": 0.6992006111218056,
+      "gbps_iqr": [
+        0.6486130757089672,
+        0.7805224705851508
+      ],
+      "threads": 8,
+      "o_direct": true,
+      "note": "python threaded O_DIRECT; fio absent on compute nodes"
+    },
+    {
+      "op": "m2_nvme_to_cpu_read",
+      "size_gb": 2.75,
+      "reps": 10,
+      "median_s": 3.005966320168227,
+      "iqr_s": [
+        3.0057270731776953,
+        3.006142763188109
+      ],
+      "gbps_median": 0.9148435383493971,
+      "gbps_iqr": [
+        0.9147898422108038,
+        0.9149163570239511
+      ],
+      "threads": 8,
+      "o_direct": true,
+      "note": "python threaded O_DIRECT; fio absent on compute nodes"
+    }
+  ]
+}
