@@ -66,7 +66,10 @@ def main():
     alpha_hbm_B = GATE_BYTES / HBM_KV_BYTES * N_GPUS   # GPU-s stolen per s
     dram_cap = int(DRAM_BYTES / GATE_BYTES)            # CPU tier capacity
 
-    # beta: wake-up cost, per currency  (lo, hi where ranged)
+    # beta: WAKE-UP cost only (read/promote path). Convention (CLAUDE.md 9.1
+    # resolution): the downward write is NOT charged here — it belongs to the
+    # non-additive transition cost f. So the NVMe re-entry threshold is the
+    # READ-ONLY form, BW* = S / beta_discard (4.6 GB/s), not the 9.2 round-trip.
     beta = {
         # tier:      A resume-stall (s),        B stolen GPU-s
         "hbm":     ((0.0, 0.0),                 (0.0, 0.0)),
@@ -98,14 +101,16 @@ def main():
                   f"beta {nv_lo:.2f} > {dis_hi:.2f}) : NVMe drops out")
         cpu_hi, dis_lo = beta["cpu"][idx][1], beta["discard"][idx][0]
         if cpu_hi < dis_lo:
-            print("  -> discard dominated by CPU on the UNCAPACITATED "
-                  f"envelope (beta {cpu_hi:.3f} < {dis_lo:.3f}) — but CPU "
-                  f"capacity is finite ({dram_cap} contexts):")
             lam = dram_cap / WAIT_S * 60
-            print(f"     Little's law: DRAM saturates at lambda >= "
-                  f"{lam:.1f} escalations/min at {WAIT_S:.0f}s waits; "
-                  "beyond that, discard is the overflow tier -> hierarchy is "
-                  "{HBM, CPU(capacitated), discard(overflow)}")
+            print("  -> discard dominated by CPU on the UNCAPACITATED "
+                  f"envelope (beta {cpu_hi:.3f} < {dis_lo:.3f}). Tier count "
+                  "is LOAD-CONDITIONAL:")
+            print(f"     lambda < lambda_crit = C/W = {lam:.1f}/min "
+                  "-> {HBM, CPU} 2-state (discard never needed)")
+            print(f"     lambda >= {lam:.1f}/min -> + discard as the "
+                  "admission-layer overflow path (3-state)")
+            print("     Deriving lambda_crit is the novelty; a 2-state "
+                  "verdict at low load is a result, not a failure.")
         # HBM vs CPU break-even (currency B: alpha_hbm vs ~0, beta 0 vs cpu)
         if idx == 1:
             t1 = beta["cpu"][0][0] and beta["cpu"][0][0]  # wake cost in A
@@ -116,12 +121,12 @@ def main():
                   "(charging the DMA round-trip as currency-A seconds)")
         print()
 
-    print("Aug-10 gate verdict (CLAUDE.md 14): NVMe eliminated on this "
-          "platform (PCIe Gen3 x1). Hierarchy survives as 3 states via the "
-          "CPU capacity constraint, not via the uncapacitated envelope. "
-          "Verdict is beta-driven and platform-conditional: NVMe re-enters "
-          f"if effective read bandwidth > {GATE_BYTES/GB / max(pf):.1f} GB/s "
-          "(i.e., beta_NVMe < beta_discard).")
+    print("Aug-10 gate verdict (CLAUDE.md 14): NVMe excluded — primarily on "
+          "architectural grounds (node fungibility, 9.1), confirmed "
+          "empirically here (PCIe Gen3 x1). Tier count is load-conditional "
+          "around lambda_crit = C/W. NVMe re-enters iff effective READ "
+          f"bandwidth > {GATE_BYTES/GB / max(pf):.1f} GB/s "
+          "(read-only convention; see beta comment above).")
 
 
 if __name__ == "__main__":
