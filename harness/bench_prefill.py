@@ -84,10 +84,17 @@ def main():
     ap.add_argument("--n-gpus", type=int, default=4,
                     help="TP degree; converts wall seconds to GPU-seconds")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--max-prompt-tokens", type=int, default=32000,
+                    help="drop prompts exceeding the server context window")
     ap.add_argument("--out", default="results/bench_prefill.json")
     args = ap.parse_args()
 
     pool = [json.loads(l) for l in open(args.prompts)]
+    n0 = len(pool)
+    pool = [p for p in pool if p["n_tokens"] <= args.max_prompt_tokens]
+    if len(pool) < n0:
+        print(f"[filter] dropped {n0 - len(pool)} prompts over "
+              f"{args.max_prompt_tokens} tokens")
     # stratified sample across the length distribution
     pool.sort(key=lambda p: p["n_tokens"])
     idx = [round(i * (len(pool) - 1) / max(args.n_prompts - 1, 1))

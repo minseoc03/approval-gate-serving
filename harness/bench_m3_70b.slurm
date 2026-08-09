@@ -27,6 +27,10 @@ NAME=$(basename "$MODEL")
 PORT=8302
 cd $WORK/harness
 
+# GPU sanity check — n07-style dead-GPU nodes waste the whole job
+NGPU=$(nvidia-smi -L 2>/dev/null | wc -l)
+if [ "$NGPU" -lt 4 ]; then echo "FATAL: only $NGPU GPUs visible on $(hostname); expected 4"; exit 1; fi
+
 echo "=== node $(hostname) $(date -Is)"
 
 echo "=== [1/4] M1+M2 on serving node"

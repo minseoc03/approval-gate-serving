@@ -31,6 +31,10 @@ TOTAL_KV_BYTES=55766715596          # 51.94 GiB per GPU, from job 2017796
 CTX_BYTES=$((8400 * 81920))         # one gate context per GPU under TP4
 cd $WORK/harness
 
+# GPU sanity check — n07-style dead-GPU nodes waste the whole job
+NGPU=$(nvidia-smi -L 2>/dev/null | wc -l)
+if [ "$NGPU" -lt 4 ]; then echo "FATAL: only $NGPU GPUs visible on $(hostname); expected 4"; exit 1; fi
+
 start_server () {  # $1 = kv-cache-memory bytes per GPU ("" = default util)
   local kvarg=()
   [ -n "$1" ] && kvarg=(--kv-cache-memory "$1")
