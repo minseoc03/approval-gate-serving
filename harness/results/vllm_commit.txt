@@ -1,0 +1,1 @@
+0.26.0 (pip) + suspendserve pin patch 2026-08-16, see blockpool_pin.diff

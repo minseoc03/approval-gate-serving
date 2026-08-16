@@ -1,0 +1,173 @@
+{
+ "tuned": {
+  "burst": 5,
+  "active": 0,
+  "exp": 0,
+  "lognorm": 0,
+  "offline": 0
+ },
+ "rows": [
+  {
+   "train": "burst",
+   "eval": "burst",
+   "tau": 5,
+   "meanB": 0.7076336781459812
+  },
+  {
+   "train": "burst",
+   "eval": "active",
+   "tau": 5,
+   "meanB": 0.02
+  },
+  {
+   "train": "burst",
+   "eval": "exp",
+   "tau": 5,
+   "meanB": 0.9145331506556774
+  },
+  {
+   "train": "burst",
+   "eval": "lognorm",
+   "tau": 5,
+   "meanB": 1.2174616666666667
+  },
+  {
+   "train": "burst",
+   "eval": "offline",
+   "tau": 5,
+   "meanB": 1.5629799999999998
+  },
+  {
+   "train": "active",
+   "eval": "burst",
+   "tau": 0,
+   "meanB": 0.6972499999999999
+  },
+  {
+   "train": "active",
+   "eval": "active",
+   "tau": 0,
+   "meanB": 0.02
+  },
+  {
+   "train": "active",
+   "eval": "exp",
+   "tau": 0,
+   "meanB": 0.80624
+  },
+  {
+   "train": "active",
+   "eval": "lognorm",
+   "tau": 0,
+   "meanB": 1.0702099999999999
+  },
+  {
+   "train": "active",
+   "eval": "offline",
+   "tau": 0,
+   "meanB": 1.37324
+  },
+  {
+   "train": "exp",
+   "eval": "burst",
+   "tau": 0,
+   "meanB": 0.6972499999999999
+  },
+  {
+   "train": "exp",
+   "eval": "active",
+   "tau": 0,
+   "meanB": 0.02
+  },
+  {
+   "train": "exp",
+   "eval": "exp",
+   "tau": 0,
+   "meanB": 0.80624
+  },
+  {
+   "train": "exp",
+   "eval": "lognorm",
+   "tau": 0,
+   "meanB": 1.0702099999999999
+  },
+  {
+   "train": "exp",
+   "eval": "offline",
+   "tau": 0,
+   "meanB": 1.37324
+  },
+  {
+   "train": "lognorm",
+   "eval": "burst",
+   "tau": 0,
+   "meanB": 0.6972499999999999
+  },
+  {
+   "train": "lognorm",
+   "eval": "active",
+   "tau": 0,
+   "meanB": 0.02
+  },
+  {
+   "train": "lognorm",
+   "eval": "exp",
+   "tau": 0,
+   "meanB": 0.80624
+  },
+  {
+   "train": "lognorm",
+   "eval": "lognorm",
+   "tau": 0,
+   "meanB": 1.0702099999999999
+  },
+  {
+   "train": "lognorm",
+   "eval": "offline",
+   "tau": 0,
+   "meanB": 1.37324
+  },
+  {
+   "train": "offline",
+   "eval": "burst",
+   "tau": 0,
+   "meanB": 0.6972499999999999
+  },
+  {
+   "train": "offline",
+   "eval": "active",
+   "tau": 0,
+   "meanB": 0.02
+  },
+  {
+   "train": "offline",
+   "eval": "exp",
+   "tau": 0,
+   "meanB": 0.80624
+  },
+  {
+   "train": "offline",
+   "eval": "lognorm",
+   "tau": 0,
+   "meanB": 1.0702099999999999
+  },
+  {
+   "train": "offline",
+   "eval": "offline",
+   "tau": 0,
+   "meanB": 1.37324
+  }
+ ],
+ "baselines": {
+  "burst/opt": 0.4817488690498236,
+  "burst/online_rand": 0.7543232206716501,
+  "active/opt": 0.01986069280176466,
+  "active/online_rand": 0.031404290768635865,
+  "exp/opt": 0.7983871599220442,
+  "exp/online_rand": 1.264692799961746,
+  "lognorm/opt": 1.0702099999999999,
+  "lognorm/online_rand": 1.698381412386587,
+  "offline/opt": 1.37324,
+  "offline/online_rand": 2.168251051403927
+ }
+}

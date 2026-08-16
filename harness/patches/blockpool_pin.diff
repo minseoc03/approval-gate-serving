@@ -1,0 +1,131 @@
+--- .venv-vllm/lib/python3.12/site-packages/vllm/v1/core/block_pool.py.orig-ss	2026-08-05 02:57:11.753781715 -0400
++++ .venv-vllm/lib/python3.12/site-packages/vllm/v1/core/block_pool.py	2026-08-16 09:44:43.176455135 -0400
+@@ -195,6 +195,15 @@
+ 
+         self.metrics_collector = metrics_collector
+ 
++        # --- suspendserve pin patch (13.1) ---
++        import os as _ss_os
++        self.pinned_block_ids: set[int] = set()
++        self.pinned_by_request: dict[str, list[KVCacheBlock]] = {}
++        self._ss_ctrl_path = _ss_os.environ.get("VLLM_PIN_CONTROL", "")
++        self._ss_events_path = _ss_os.environ.get("VLLM_PIN_EVENTS", "")
++        self._ss_ctrl_mtime = -1.0
++        self._ss_ctrl: dict = {"mode": "off", "n": 0}
++
+     def get_cached_block(
+         self, block_hash: BlockHash, kv_cache_group_ids: list[int]
+     ) -> list[KVCacheBlock] | None:
+@@ -711,7 +720,12 @@
+             # ref_cnt=0 means this block is in the free list (i.e. eviction
+             # candidate), so remove it.
+             if block.ref_cnt == 0 and not block.is_null:
+-                self.free_block_queue.remove(block)
++                # suspendserve pin patch: pinned block touch = resume -> unpin
++                if block.block_id in getattr(self, "pinned_block_ids", ()):
++                    self.pinned_block_ids.discard(block.block_id)
++                    self._ss_log({"ev": "touch_pinned", "block_id": block.block_id})
++                else:
++                    self.free_block_queue.remove(block)
+             block.ref_cnt += 1
+             if self.metrics_collector:
+                 self.metrics_collector.on_block_accessed(block)
+@@ -758,6 +772,73 @@
+             block = self.blocks[block_id]
+             self._maybe_evict_cached_block(block)
+ 
++
++    # --- suspendserve pin patch (13.1) — methods ---
++    def _ss_log(self, obj) -> None:
++        if not getattr(self, "_ss_events_path", ""):
++            return
++        try:
++            import json as _j, time as _t
++            with open(self._ss_events_path, "a") as f:
++                f.write(_j.dumps({"t": _t.time(), **obj}) + "\n")
++        except Exception:
++            pass
++
++    def _ss_control(self) -> dict:
++        if not getattr(self, "_ss_ctrl_path", ""):
++            return self._ss_ctrl
++        try:
++            import json as _j, os as _o
++            m = _o.path.getmtime(self._ss_ctrl_path)
++            if m != self._ss_ctrl_mtime:
++                with open(self._ss_ctrl_path) as f:
++                    self._ss_ctrl = _j.load(f)
++                self._ss_ctrl_mtime = m
++        except Exception:
++            pass
++        return self._ss_ctrl
++
++    def ss_should_pin(self, req_id: str) -> bool:
++        c = self._ss_control()
++        return (c.get("mode") == "first_n"
++                and len(self.pinned_by_request) < int(c.get("n", 0)))
++
++    def ss_pin_request(self, req_id: str, ordered_blocks) -> None:
++        kept, passthrough = [], []
++        for block in ordered_blocks:
++            block.ref_cnt -= 1
++            if block.ref_cnt == 0 and not block.is_null:
++                if block.block_hash is not None:
++                    self.pinned_block_ids.add(block.block_id)
++                    kept.append(block)
++                else:
++                    passthrough.append(block)
++        self.free_block_queue.prepend_n(passthrough)
++        if kept:
++            self.pinned_by_request[req_id] = kept
++        self._ss_log({"ev": "pin", "req": req_id, "n_blocks": len(kept),
++                      "free_after": self.get_num_free_blocks()})
++
++    def ss_unpin_all(self, reason: str = "reset") -> int:
++        total = 0
++        for req_id, blocks in list(getattr(self, "pinned_by_request", {}).items()):
++            live = [b for b in blocks
++                    if b.block_id in self.pinned_block_ids and b.ref_cnt == 0]
++            self.free_block_queue.append_n(live)
++            for b in live:
++                self.pinned_block_ids.discard(b.block_id)
++            total += len(live)
++            self._ss_log({"ev": "unpin", "req": req_id,
++                          "n_blocks": len(live), "reason": reason})
++        self.pinned_by_request.clear()
++        self.pinned_block_ids.clear()
++        return total
++
++    def ss_residency(self) -> dict:
++        return {r: [sum(1 for b in bl if b.block_id in self.pinned_block_ids),
++                    len(bl)]
++                for r, bl in self.pinned_by_request.items()}
++
+     def reset_prefix_cache(self) -> bool:
+         """Reset prefix cache. This function may be used in RLHF
+         flows to invalid prefix caching after the weights are updated,
+@@ -767,6 +848,7 @@
+             bool: True if the prefix cache is successfully reset,
+             False otherwise.
+         """
++        self.ss_unpin_all(reason="reset")  # suspendserve pin patch
+         num_used_blocks = self.num_gpu_blocks - self.get_num_free_blocks()
+         if num_used_blocks != 1:  # The null block is always marked as used
+             logger.warning(
+--- .venv-vllm/lib/python3.12/site-packages/vllm/v1/core/single_type_kv_cache_manager.py.orig-ss	2026-08-05 02:57:11.760878256 -0400
++++ .venv-vllm/lib/python3.12/site-packages/vllm/v1/core/single_type_kv_cache_manager.py	2026-08-16 09:44:43.180455122 -0400
+@@ -500,7 +500,13 @@
+             request_id: The request ID.
+         """
+         # Free blocks in reverse order so that the tail blocks are freed first.
+-        self.block_pool.free_blocks(reversed(self.pop_blocks_for_free(request_id)))
++        # suspendserve pin patch: suspended requests are withheld, not freed.
++        _ss_blocks = self.pop_blocks_for_free(request_id)
++        if (getattr(self.block_pool, "ss_should_pin", None) is not None
++                and self.block_pool.ss_should_pin(request_id)):
++            self.block_pool.ss_pin_request(request_id, reversed(_ss_blocks))
++        else:
++            self.block_pool.free_blocks(reversed(_ss_blocks))
+ 
+     @abstractmethod
+     def get_num_common_prefix_blocks(self, running_request_id: str) -> int:
