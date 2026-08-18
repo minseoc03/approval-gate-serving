@@ -32,6 +32,30 @@ import policy as P
 import replay as R
 
 
+def sched_ac(lam_mult):
+    """Load-indexed shadow price alpha_CPU(lambda) = max(0, lam-lam_crit)/C * beta.
+    ORACLE-lambda, per-condition static: computed ONCE from the condition's
+    offered rate before the run; no online estimator (state in paper 4.3)."""
+    lam = lam_mult * R.C_CPU / R.W_REF
+    return max(0.0, lam - R.C_CPU / R.W_REF) / R.C_CPU * R.BETA_DISCARD_B
+
+
+def make_cpu_ttl(lam_mult):
+    """Deterministic fixed baseline: CPU at t=0, discard at t2(lambda). No DPM.
+    Decision is arrival-time one-shot (full trajectory returned up front);
+    contexts already in CPU are NEVER re-evaluated; <=2 downward moves per
+    request (HBM->CPU at 0, CPU->discard at t2 iff wait > t2); on overflow
+    ({HBM,discard} system) it discards immediately, mirroring always_cpu."""
+    import math as _m
+    ac = sched_ac(lam_mult)
+    t2 = (R.BETA_DISCARD_B - R.BETA_CPU_B) / ac if ac > 0 else _m.inf
+    def fn(ts, wait, pred, rng):
+        if len(ts.alphas) == 3:
+            return [0.0] if t2 == _m.inf else [0.0, t2]
+        return [0.0]
+    return fn
+
+
 def make_const_alpha(base_fn, ac):
     ts3 = P.TierSystem([R.ALPHA_HBM_B, ac, 0.0],
                        [0.0, R.BETA_CPU_B, R.BETA_DISCARD_B],
@@ -85,6 +109,23 @@ def main():
                                 f"{name}{dist}{lm}")
                 rows.append(dict(dist=dist, lam_mult=lm, variant=name,
                                  alpha_cpu=ac or 0.0, meanB=m,
+                                 forced_frac=ff, discard_frac=df))
+                line += f"{m:<10.3f}"
+            print(line)
+        # load-indexed variants (per-lambda alpha_CPU; the paper 4.3 schedule).
+        # Previously run ad hoc — folded in 2026-08-18 for reproducibility.
+        extra = {
+            "ac: sched(lam)": lambda lm: make_const_alpha(
+                P.online_rand_prudent, sched_ac(lm)),
+            "cpu_ttl(lam)": make_cpu_ttl,
+        }
+        for name, mk in extra.items():
+            line = name.ljust(18)
+            for lm in args.lam_mults:
+                m, ff, df = run(dist, lm, mk(lm), args.n, args.seed,
+                                f"{name}{dist}{lm}")
+                rows.append(dict(dist=dist, lam_mult=lm, variant=name,
+                                 alpha_cpu=sched_ac(lm), meanB=m,
                                  forced_frac=ff, discard_frac=df))
                 line += f"{m:<10.3f}"
             print(line)

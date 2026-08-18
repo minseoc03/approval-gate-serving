@@ -39,12 +39,13 @@ import numpy as np
 import policy as P
 
 # Measured constants (CLAUDE.md 14 final verdict)
-ALPHA_HBM_B = 0.0530        # GPU-s stolen per second pinned (M4)
+ALPHA_HBM_B = 0.0189        # GPU-s/s per context: ATTRIBUTABLE capacity share — private suffix only (0.98/207.6 GB KV) x 4 GPUs. T2 (job 2065412, 223k touch-unpin events) showed bg traffic keeps the ~5.4K shared prefix hot on its own, so a sleeper's marginal footprint is its ~3.0K private suffix. A DERIVATION, not the M4 TTFT slope (units: CLAUDE.md 11.1(b)).
+ALPHA_HBM_B_FULL = 0.0530   # sensitivity bound: charge the full 2.75 GB context (prefix-private deployments); t* = 36 s vs 101 s under suffix accounting
 BETA_DISCARD_B = 1.91       # GPU-s, suffix re-prefill (M3)
 BETA_CPU_B = 0.02           # GPU-s, DMA overhead bound
 BETA_CPU_A = 0.048          # s, CPU->HBM reload wall (M1)
 BETA_DISCARD_A = 0.479      # s, suffix re-prefill wall (M3)
-C_HBM = 75
+C_HBM = 75                  # capacity still counted in FULL contexts (conservative; suffix sharing would raise it — T2 held 72 sleepers with no bg cliff)
 C_CPU = 400
 W_REF = 1800.0
 

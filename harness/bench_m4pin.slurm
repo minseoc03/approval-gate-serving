@@ -28,6 +28,10 @@ NGPU=$(nvidia-smi -L 2>/dev/null | wc -l)
 if [ "$NGPU" -lt 4 ]; then echo "FATAL: only $NGPU GPUs on $(hostname)"; exit 1; fi
 if ! nvidia-smi --query-gpu=uuid --format=csv,noheader >/dev/null 2>&1; then
   echo "FATAL: NVML unhealthy on $(hostname)"; exit 1; fi
+# n09-style: nvidia-smi lists 4 but CUDA initializes only 3 — probe the exact
+# call that fails (torch get_device_properties on every index)
+if ! $VENV/bin/python -c "import torch; assert torch.cuda.device_count() >= 4; [torch.cuda.get_device_properties(i) for i in range(4)]" >/dev/null 2>&1; then
+  echo "FATAL: CUDA cannot initialize 4 GPUs on $(hostname)"; exit 1; fi
 if ! grep -q "suspendserve pin patch" \
     $VENV/lib/python3.12/site-packages/vllm/v1/core/block_pool.py; then
   echo "FATAL: pin patch not applied to $VENV"; exit 1; fi

@@ -22,7 +22,8 @@ import statistics
 GB = 1e9
 
 # Platform constants (measured; CLAUDE.md 12, 13, 16)
-GATE_BYTES = 2.75 * GB          # median gate context KV, 70B
+GATE_BYTES = 2.75 * GB          # median gate context KV, 70B (full 8.4K tok)
+SUFFIX_BYTES = 0.98 * GB        # private suffix (~3.0K tok) — the ATTRIBUTABLE footprint; T2 (job 2065412) showed bg traffic keeps the shared prefix hot on its own
 HBM_KV_BYTES = 207.6 * GB       # 51.9 GiB x 4 GPUs, job 2017796
 DRAM_BYTES = 1.1e12             # available CPU RAM for offload
 N_GPUS = 4
@@ -63,7 +64,10 @@ def main():
 
     # alpha: holding cost per second
     #   currency B: HBM occupancy steals a capacity share of node goodput
-    alpha_hbm_B = GATE_BYTES / HBM_KV_BYTES * N_GPUS   # GPU-s stolen per s
+    # suffix accounting (adopted 2026-08-18 after T2): only the private
+    # suffix is attributable to the sleeper. Full-context = sensitivity bound.
+    alpha_hbm_B = SUFFIX_BYTES / HBM_KV_BYTES * N_GPUS   # GPU-s stolen per s
+    alpha_hbm_B_full = GATE_BYTES / HBM_KV_BYTES * N_GPUS
     dram_cap = int(DRAM_BYTES / GATE_BYTES)            # CPU tier capacity
 
     # beta: WAKE-UP cost only (read/promote path). Convention (CLAUDE.md 9.1
